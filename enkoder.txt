@@ -1,0 +1,176 @@
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx primitives in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity enkoder is
+    Port ( A : in  STD_LOGIC;
+           B : in  STD_LOGIC;
+           u_d_out : out  STD_LOGIC;
+           res : in  STD_LOGIC;
+           clk_out : out  STD_LOGIC;
+			  diody : out STD_LOGIC_VECTOR(3 downto 0);
+           clk : in  STD_LOGIC);
+end enkoder;
+
+architecture Behavioral of enkoder is
+signal stan: std_logic_vector(3 downto 0 );
+constant S0: std_logic_vector(3 downto 0) := "0000";
+constant S1: std_logic_vector(3 downto 0) := "0001";
+constant S2: std_logic_vector(3 downto 0) := "0010";
+constant S3: std_logic_vector(3 downto 0) := "0011";
+constant S4: std_logic_vector(3 downto 0) := "0100";
+constant S5: std_logic_vector(3 downto 0) := "0101";
+constant S10: std_logic_vector(3 downto 0) := "1001";
+constant S20: std_logic_vector(3 downto 0) := "1010";
+constant S30: std_logic_vector(3 downto 0) := "1011";
+constant S40: std_logic_vector(3 downto 0) := "1100";
+constant S50: std_logic_vector(3 downto 0) := "1101";
+signal licznik: std_logic_vector(3 downto 0) := "0000";
+signal kierunek: std_logic := '0';
+
+
+
+BEGIN
+
+
+process (clk, res)
+begin
+	if(res = '1') then
+		stan <= "0000";
+	elsif(clk'Event and clk = '1') then
+		case stan is
+			when S0 =>
+				clk_out <= '0';
+				u_d_out <= '0';
+			if A = '1' and B = '0' then
+				stan <= S1;
+			elsif A = '0' and B = '1' then
+				stan <= S10;
+			else stan <= S0;
+			end if;
+			
+			when S1 =>
+			if A = '1' and B = '1' then
+				stan <= S2;
+			elsif A = '1' and B = '0' then
+				stan <= S1;
+			else stan <= S0;
+			end if;
+			
+			when S2 =>
+			if A = '0' and B = '1' then
+				stan <= S3;
+			elsif A = '1' and B = '1' then
+				stan <= S2;
+			else stan <= S0;
+			end if;
+			
+			when S3 =>
+			if A = '0' and B = '0' then
+				stan <= S4;
+			elsif A = '0' and B = '1' then
+				stan <= S3;
+			else stan <= S0;
+			end if;
+			
+			when S4 =>
+				u_d_out <= '1';
+				stan <= S5;
+			
+			when S5 =>
+				
+				clk_out <= '1';
+				stan <= S0;
+				
+				
+			when S10 =>
+			if A = '1' and B = '1' then 
+				stan <= S20;
+			elsif A = '0' and B = '1' then
+				stan <= S10;
+			else stan <= S0;
+			end if;
+			
+			when S20 =>
+			if A = '1' and B = '1' then
+				stan <= S30;
+			elsif A = '1' and B = '1' then
+				stan <= S20;
+			else stan <= S0;
+			end if;
+			
+			when S30 =>
+			if A = '1' and B = '0' then
+				stan <= S40;
+			elsif A = '1' and B = '1' then
+				stan <= S30;
+			else stan <= S0;
+			end if;
+			
+			when S40 =>
+				u_d_out <= '0';
+				stan <= S50;
+				
+			when S50 =>
+				clk_out <= '1';
+				stan <= S0;
+				
+			when others =>
+				stan <= S0;
+		end case;
+	end if;
+end process;
+
+
+
+swiecenie : process (clk, res)
+begin
+	if(res = '1') then
+		licznik <= "0000";
+	elsif (clk'Event and clk = '1') then
+		if(kierunek = '0') then
+			if(stan = S5) then
+				licznik <= licznik + 1;
+			elsif(stan = S50) then
+				licznik <= licznik - 1;
+			end if;
+		elsif(kierunek = '1') then
+			if (stan = S5) then
+				licznik <= licznik -1;
+			elsif(stan = S50) then
+				licznik <= licznik -1;
+			end if;
+		end if;
+	end if;
+end process swiecenie;
+
+
+zmienna : process (clk, res)
+begin
+	if(res = '1') then
+		kierunek <= '0';
+	elsif(clk'Event and clk = '1') then
+		if(licznik = "1111") then
+			kierunek <= '1';
+		elsif(licznik = "0000") then
+			kierunek <= '0';
+		end if;
+	end if;
+end process zmienna;
+
+diody <= licznik;
+				
+
+end Behavioral;
+
